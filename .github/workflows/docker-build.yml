@@ -1,0 +1,41 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Web App Docker Image
+        run: |
+          docker build -t web-app:${{ github.sha }} --build-arg BG_COLOR=blue .
+          docker tag web-app:${{ github.sha }} ${{ secrets.ECR_WEB_REPO }}:latest
+
+      - name: Push Web App to ECR
+        run: |
+          docker push ${{ secrets.ECR_WEB_REPO }}:latest
+
+      - name: Push MySQL Docker Image
+        run: |
+          docker pull mysql:8
+          docker tag mysql:8 ${{ secrets.ECR_MYSQL_REPO }}:latest
+          docker push ${{ secrets.ECR_MYSQL_REPO }}:latest
