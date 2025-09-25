@@ -1,17 +1,16 @@
-name: Build and Push Docker Images
+name: Build and Push to ECR
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ "main" ]
 
 jobs:
-  build-and-push:
+  build:
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout source
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
@@ -25,17 +24,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Web App Docker Image
+      - name: Build, tag, and push app image
         run: |
-          docker build -t web-app:${{ github.sha }} --build-arg BG_COLOR=blue .
-          docker tag web-app:${{ github.sha }} ${{ secrets.ECR_WEB_REPO }}:latest
+          docker build -t clo835-a1-app ./app
+          docker tag clo835-a1-app:latest 851725360313.dkr.ecr.us-east-1.amazonaws.com/clo835-a1-app:latest
+          docker push 851725360313.dkr.ecr.us-east-1.amazonaws.com/clo835-a1-app:latest
 
-      - name: Push Web App to ECR
+      - name: Build, tag, and push db image
         run: |
-          docker push ${{ secrets.ECR_WEB_REPO }}:latest
-
-      - name: Push MySQL Docker Image
-        run: |
-          docker pull mysql:8
-          docker tag mysql:8 ${{ secrets.ECR_MYSQL_REPO }}:latest
-          docker push ${{ secrets.ECR_MYSQL_REPO }}:latest
+          docker build -t clo835-a1-db ./db
+          docker tag clo835-a1-db:latest 851725360313.dkr.ecr.us-east-1.amazonaws.com/clo835-a1-db:latest
+          docker push 851725360313.dkr.ecr.us-east-1.amazonaws.com/clo835-a1-db:latest
